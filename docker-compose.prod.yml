@@ -1,0 +1,36 @@
+# docker-compose.prod.yml - Landing Page BetChecker
+#
+# ANTES DE DEPLOYAR:
+# 1. Build da imagem via SSH ou Portainer:
+#    docker build --build-arg NEXT_PUBLIC_FB_PIXEL_ID=1374452931031710 -t betchecker-lp:latest -f Dockerfile.prod .
+# 2. Configurar DNS (Cloudflare ou Hostinger):
+#    - lp.betchecker.com.br (A record) → IP do manager.arvsystems.cloud
+#    - OU usar CNAME apontando para manager.arvsystems.cloud
+
+version: "3.8"
+
+services:
+  betchecker_lp:
+    image: betchecker-lp:latest
+    networks:
+      - network_public
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.betchecker_lp.rule=Host(`lp.betchecker.com.br`)
+        - traefik.http.routers.betchecker_lp.entrypoints=websecure
+        - traefik.http.routers.betchecker_lp.tls.certresolver=letsencryptresolver
+        - traefik.http.services.betchecker_lp.loadbalancer.server.port=3000
+
+networks:
+  network_public:
+    external: true
